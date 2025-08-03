@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 
+from src.routes.home_route import router as home_router
+from src.routes.auth_route import router as auth_router
+
 app = FastAPI()
 
-@app.get("/")
-async def handle_get_home():
-    return 200
+app.include_router(router=home_router)
+app.include_router(router=auth_router)
