@@ -1,5 +1,7 @@
 import json
 from datetime import datetime, timezone
+import random
+import string
 
 from passlib.context import CryptContext
 from fastapi.requests import Request
@@ -11,6 +13,7 @@ from src.database import get_database
 from src.schemas.user_schema import CurrentUser, SessionData
 from src import config
 from src.models.user_model import User
+from src.models.bookmark_model import Bookmark
 
 pwd_context = CryptContext(schemes=["sha256_crypt"])
 
@@ -28,7 +31,7 @@ async def get_current_user(
 ) -> CurrentUser:
     auth_header = request.headers.get("Authorization")
 
-    if not auth_header or not auth_header.startswith("Bearer "):
+    if not auth_header or not auth_header.lower().startswith("bearer "):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid Authorization header",
@@ -82,3 +85,19 @@ async def get_current_user(
         session_id=session_id,
     )
     return current_user
+
+
+def generate_short_code(length: int = 16):
+    chars = string.ascii_letters + string.digits
+    return "".join(random.choice(chars) for _ in range(length))
+
+
+async def create_unique_short_code(db: AsyncSession):
+    while True:
+        short_code = generate_short_code()
+        result = await db.execute(
+            select(Bookmark).filter(Bookmark.short_code == short_code)
+        )
+        exists = result.scalars().first()
+        if not exists:
+            return short_code
