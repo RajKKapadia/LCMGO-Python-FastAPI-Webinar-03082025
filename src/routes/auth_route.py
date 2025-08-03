@@ -7,8 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_database
 from src.models.user_model import User
-from src.utils.helper import hash_password, verify_password
-from src.schemas.user_schema import AuthUser, NewUser, SessionData, SessionResponse
+from src.utils.helper import get_current_user, hash_password, verify_password
+from src.schemas.user_schema import (
+    AuthUser,
+    CurrentUser,
+    NewUser,
+    SessionData,
+    SessionResponse,
+)
 from src import config
 
 router = APIRouter(prefix="/auth")
@@ -95,9 +101,9 @@ async def handle_post_login(
     return SessionResponse(session_id=session_id)
 
 
-# @router.get("/logout", response_model=None, status_code=204)
-# async def handle_get_user(
-#     current_user: CurrentUser = Depends(get_current_user),
-# ):
-#     config.redis_client.delete(current_user.session_id)
-#     return None
+@router.get("/logout", response_model=None, status_code=204)
+async def handle_get_user(
+    current_user: CurrentUser = Depends(get_current_user),
+):
+    config.redis_client.delete(current_user.session_id)
+    return None
